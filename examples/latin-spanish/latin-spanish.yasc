@@ -1,0 +1,416 @@
+%% ==========================================================================
+%% latin-spanish.yasc -- an illustrative Latin > Spanish sound-change script
+%% ==========================================================================
+%%
+%% Purpose: show how YASC reads, and serve as a non-trivial compiler test.
+%% It is NOT a complete or exact history of Spanish.  It covers the major
+%% developments and derives, among others, FACTUM > hecho [ˈetʃo].
+%%
+%% ORTHOGRAPHIES
+%%   $Lat  input.  Classical capitals (FACTUM) or lowercase (factum).
+%%         Long vowels: a macron (ā ē ī ō ū, Ā Ē Ī Ō Ū), or a colon after the
+%%         vowel (a: FA:MAM).  Both are accepted; the lexicon uses macrons.
+%%         Editorial convention: V = consonantal [w] (VITAM), U = vowel [u]
+%%         (FACTUM); J = consonantal i.  C, K, Q = [k]; CH = [k], PH = [f],
+%%         TH = [t] (Greek loans such as SCHOLAM).  X, Y, Z are not declared.
+%%   $IPA  output.  Broad IPA with primary stress [ˈ] written before the
+%%         stressed syllable.  No spirantization ([b d g], not [β ð ɣ]) and
+%%         no yeísmo ([ʎ] kept), i.e. conservative Castilian.
+%%   $Sp   Spanish spelling.
+%%
+%% THE SILENT h, AND HOW SPELLING IS PRODUCED
+%%   Modern Spanish spelling is essentially the spelling of the early 16th
+%%   century, when h (< Latin f-) was still pronounced [h], j spelled [ʒ],
+%%   v spelled [β] as distinct from b, and c/ç spelled [ts].  The script
+%%   therefore saves the form at the !date 1500 checkpoint as $spell, before
+%%   the Early Modern changes (h > 0, ʒ > x, β > b, ts > θ).  $Sp is applied
+%%   to that saved form, while $IPA is applied to the final form:
+%%        FACTUM  >  [ˈetʃo]   (final form, $IPA)
+%%                >  hecho    (1500 form [ˈhetʃo], $Sp)
+%%   So the silent h is not a segment of the modern form at all: it is the
+%%   written trace of an earlier [h].  The same mechanism gives
+%%   hijo (1500 [ˈhiʒo]), vida ([ˈβida]) and ciudad ([tsjuˈdad]).
+%%
+%% STRESS
+%%   Derived by rule (block "Stress"), not pre-marked: the Latin
+%%   penultimate law -- stress the penult if it is heavy (long vowel, or
+%%   closed syllable), otherwise the antepenult; disyllables stress the
+%%   penult.  Stress is a Scope(Syllable) feature, so the Syllabification
+%%   section below must run first.
+%% ==========================================================================
+
+$P := Phonology [[
+  %% --- major class and manner ---
+  Syll Binary
+    == Syllabic syllabic
+  Cons Binary
+    == Consonantal consonantal
+  Son Binary
+    == Sonorant sonorant
+  Cont Binary
+    == Continuant continuant
+  DelRel Binary              %% delayed release: affricates ts dz tʃ
+  Strident Binary            %% s ts tʃ ʃ ʒ (vs θ)
+  Voice Binary
+  Nasal Binary
+  Lateral Binary
+  Trill Binary               %% trill r vs tap ɾ
+
+  %% --- place: feature geometry ---
+  %% Coronal is itself a class node over Anterior, so !Coronal holds iff
+  %% Anterior is specified (spec §4.3 rule 2).  Palatals (tʃ ʃ ʒ ɲ ʎ) are
+  %% -Anterior coronals.  h has no Place at all.
+  Place Node(Labial Coronal Dorsal)
+  Labial Unary
+  Coronal Node(Anterior)
+  Anterior Binary
+  Dorsal Unary
+
+  %% --- vowels (and glides j w) ---
+  High Binary
+  Low Binary
+  Back Binary
+  Round Binary
+  ATR Binary                 %% tense e o vs lax ɛ ɔ (and ɪ ʊ)
+  Long Binary
+    == Length length
+
+  %% --- prosody ---
+  Stress Scalar(0,2) Scope(Syllable)
+
+  %% --- orthographic only ---
+  SpellMark Unary            %% k spelled <qu> ($Sp respelling block, !date 1500)
+
+  %% --- implications (redundancy rules) ---
+  {+High} --> {-Low}
+  {+Low} --> {-High}
+  {+Low} --> {-ATR}
+  {+Low +ATR} --> {-ATR}     %% reads ATR, so it re-fires when a rule sets +ATR on a low
+                             %% vowel (e.g. QualityForQuantity on long ā); spec §4.5 re-runs
+                             %% an implication only when a feature its trigger reads changes
+  {+Nasal} --> {+Son -Cont}
+  {+Lateral} --> {+Son -Nasal}
+  {+DelRel} --> {-Son -Cont}
+  {+Syll} --> {-Cons +Son}
+  {+Syll} ~~> {+Cont -Nasal -Lateral -Long}
+  {+Son} ~~> {+Voice}
+  {-Son} ~~> {-Nasal -Lateral}
+  {-Cons} ~~> {-Nasal -Lateral}
+]]
+
+%% --------------------------------------------------------------------------
+%% Input: Latin.  Capitals and lowercase; macron or colon for length.
+%% --------------------------------------------------------------------------
+$Lat := Orthography [[
+  %% vowels
+  [A a Ā ā]          {+Syll -High +Low +Back -Round}
+  [E e Ē ē]          {+Syll -High -Low -Back -Round}
+  [I i Ī ī]          {+Syll +High -Low -Back -Round}
+  [O o Ō ō]          {+Syll -High -Low +Back +Round}
+  [U u Ū ū]          {+Syll +High -Low +Back +Round}
+  [A a E e I i O o U u] {-Long}
+  [Ā ā Ē ē Ī ī Ō ō Ū ū] {+Long}
+  {+Long} ==> [#:]
+  %% glides: V = [w], J = [j]
+  [V v]              {-Syll -Cons +Son +Cont +High +Back +Round}
+  [J j]              {-Syll -Cons +Son +Cont +High -Back -Round}
+  %% obstruents
+  [P p B b F f PH ph]            {!Labial}
+  [T t D d S s TH th]            {+Anterior}
+  [C c K k Q q G g CH ch]        {!Dorsal}
+  [P p T t C c K k Q q B b D d G g PH ph TH th CH ch F f S s] {-Syll +Cons -Son}
+  [P p T t C c K k Q q B b D d G g TH th CH ch] {-Cont}
+  [F f S s PH ph]                {+Cont}
+  [P p T t C c K k Q q F f S s PH ph TH th CH ch] {-Voice}
+  [B b D d G g]                  {+Voice}
+  [S s]                          {+Strident}
+  [H h]              {-Syll -Cons -Son +Cont -Voice}
+  %% sonorants
+  [M m]              {-Syll +Cons +Nasal !Labial}
+  [N n]              {-Syll +Cons +Nasal +Anterior}
+  [L l]              {-Syll +Cons +Lateral +Cont +Anterior}
+  [R r]              {-Syll +Cons +Son +Cont -Nasal -Lateral -Trill +Anterior}
+  SyllableSeparator == [.]
+]]
+
+%% --------------------------------------------------------------------------
+%% Spanish spelling, applied to the c.1500 form saved in $spell (see header).
+%% Syll/Cons are ignored so that glide j and vowel i both spell <i> (w, u:
+%% <u>); ATR and Long are ignored too.
+%% An orthography is context-free (notes.md §4 S5), so the choice between
+%% c/qu and c/z is made by the respelling block at !date 1500, on the copy:
+%%   k before e i j    gets !SpellMark       -> <qu>   (quien)
+%%   k elsewhere                             -> <c>    (cabello, escuela)
+%%   ts before e i j   is rewritten as k     -> <c>    (ciudad)
+%%   ts elsewhere      is rewritten as dz    -> <z>    (paz)
+%% --------------------------------------------------------------------------
+$Sp := Orthography [[
+  *{Syll Cons ATR Long}
+  [i] {+Son +Cont +High -Low -Back -Round -Nasal -Lateral}
+  [e] {+Son +Cont -High -Low -Back -Round -Nasal -Lateral}
+  [a] {+Son +Cont -High +Low +Back -Round -Nasal -Lateral}
+  [o] {+Son +Cont -High -Low +Back +Round -Nasal -Lateral}
+  [u] {+Son +Cont +High -Low +Back +Round -Nasal -Lateral}
+  [p b f v m t d s c z n l r rr ch j ñ ll qu g] {-Syll +Cons}
+  [p b f v m]        {!Labial}
+  [t d s z n l r rr] {+Anterior}
+  [ch j ñ ll]        {-Anterior}
+  [c qu g]           {!Dorsal}
+  [qu]               {!SpellMark}
+  [p b f v t d s c z qu g ch j] {-Son}
+  [p b t d c z qu g ch] {-Cont}
+  [f v s j]          {+Cont}
+  [p t c qu f s ch]  {-Voice}
+  [b d g v z j]      {+Voice}
+  [z ch]             {+DelRel +Strident}
+  [s j]              {+Strident}
+  [h]                {-Son +Cont -Voice}
+  [m n ñ]            {+Nasal}
+  [l ll]             {+Lateral +Cont}
+  [r]                {+Son +Cont -Nasal -Lateral -Trill}
+  [rr]               {+Son +Cont -Nasal -Lateral +Trill}
+]]
+
+%% --------------------------------------------------------------------------
+%% Output: broad IPA.  Also renders every intermediate stage (ɪ ʊ ɛ ɔ, ts,
+%% dz, ʒ, β, long vowels) so that traces are readable.
+%% --------------------------------------------------------------------------
+$IPA := Orthography [[
+  [i ɪ e ɛ]          {+Syll -Back -Round}
+  [a]                {+Syll -High +Low +Back -Round}
+  [u ʊ o ɔ]          {+Syll +Back +Round}
+  [i ɪ u ʊ]          {+High -Low}
+  [e ɛ o ɔ]          {-High -Low}
+  [i e u o]          {+ATR}
+  [ɪ ɛ ʊ ɔ]          {-ATR}
+  {+Long} ==> [#ː]
+  [j]                {-Syll -Cons +Son +Cont +High -Back -Round}
+  [w]                {-Syll -Cons +Son +Cont +High +Back +Round}
+  [p b f β m t d s z θ ts dz n l ɾ r tʃ ʃ ʒ ɲ ʎ k g x] {-Syll +Cons}
+  [p b f β m]        {!Labial}
+  [t d s z θ ts dz n l ɾ r] {+Anterior}
+  [tʃ ʃ ʒ ɲ ʎ]       {-Anterior}
+  [k g x]            {!Dorsal}
+  [p b f β t d s z θ ts dz tʃ ʃ ʒ k g x] {-Son}
+  [p b t d ts dz tʃ k g] {-Cont}
+  [f β s z θ ʃ ʒ x]  {+Cont}
+  [p f t s θ ts tʃ ʃ k x] {-Voice}
+  [b β d z dz ʒ g]   {+Voice}
+  [ts dz tʃ]         {+DelRel}
+  [s z ts dz tʃ ʃ ʒ] {+Strident}
+  [θ]                {-Strident}
+  [h]                {-Syll -Cons -Son +Cont -Voice}
+  [m n ɲ]            {+Nasal}
+  [l ʎ]              {+Lateral +Cont}
+  [ɾ]                {+Son +Cont -Nasal -Lateral -Trill}
+  [r]                {+Son +Cont -Nasal -Lateral +Trill}
+  SyllableMark {2Stress} == [ˈ]
+]]
+
+%% Every Orthography section resets input, output AND the working
+%% orthography, so this line must come last: input $Lat, output $IPA.
+%% Consequence: [...] strings in the rules below are parsed with $Lat, so
+%% rules only write Latin letters (p t k b d g ...) in brackets and use the
+%% feature macros below for everything else (see notes.md, issue O1).
+!orthography input $Lat output $IPA
+
+%% --------------------------------------------------------------------------
+%% Syllabification: muta cum liquida (and C + glide) are onsets, so PETRAM
+%% is pe.tram and CAPILLUM ca.pil.lum (closed, hence heavy, penult).
+%% --------------------------------------------------------------------------
+$Syl := Syllabification [[
+  Onset    << {-Son}{+Cons +Son -Nasal} | {+Cons}{-Syll -Cons} | C >>
+  Nucleus  V
+  Coda     (C)(C)
+  Algorithm         MaxOnset
+  OnsetRequired     no
+  NucleusPreference first
+  Persistent        no
+  Domain            word
+]]
+
+%% --------------------------------------------------------------------------
+%% Global macros.  [...] is read with $Lat (see above), so segments that
+%% Latin lacks are written as feature bundles.
+%% --------------------------------------------------------------------------
+V === {+Syll}
+C === {-Syll}
+Glide === {-Syll -Cons}
+Liquid === {+Cons +Son -Nasal}
+Velar === {!Dorsal -Son -Cont}
+Palatal === {-Syll -Anterior}
+VoicelessStop === <<[p]|[t]|[k]>>
+VoicedStop === <<[b]|[d]|[g]>>
+TenseE === {+Syll -High -Low -Back -Round +ATR}
+%% RHS "shapes": applied to an existing segment, they turn it into
+%% [tʃ] and [ʎ] (Place is delinked first because it precedes Anterior in
+%% declaration order, spec §8.2.4 "Order").
+TSH === {+Cons -Son -Cont -Voice +DelRel +Strident _Place -Anterior _High _Low _Back _Round _Long}
+LY  === {+Cons +Son +Cont +Voice +Lateral _Place -Anterior}
+%% apocope-licensing consonants: voiced or continuant dentals/alveolars
+%% (d l n r s z θ), but not t or ts
+ApocopeC === << {-Syll +Anterior +Voice} | {-Syll +Anterior +Cont} >>
+
+$R := Rules [[
+  $input := $_
+
+  %% ======================================================================
+  !date 0                                         %% Classical Latin
+  %% ======================================================================
+  !syllabify $Syl
+  V --> {0Stress}                                 /" Unstressed
+  %% Penultimate law.  ||[[ ]]: the first member that applies wins.
+  ||[[
+    %% (spaces matter: "VC" would be read as one macro name)
+    V --> {2Stress} / #C* ___ C*#                 /" StressMonosyllable
+    V --> {2Stress} / #C* ___ C* V C*#            /" StressDisyllable
+    V:{+Long} --> {2Stress} / ___ C* V C*#        /" StressLongPenult
+    %% closed penult = two or more consonants before the final vowel, unless
+    %% they form an onset (muta cum liquida, C + glide).  Heaviness is tested
+    %% segmentally.  Since P7 the role features of spec §5.4 would also allow
+    %% "___ {SylCoda} C* V C*#"; the segmental test is kept, because it was
+    %% written (and hand-checked) before SylCoda existed (notes.md, issue C2).
+    V --> {2Stress} / ___ C C C* V C*#  /! ___ <<{-Son} Liquid|C Glide>> V C*#  /" StressClosedPenult
+    V --> {2Stress} / ___ C* V C* V C*#           /" StressAntepenult
+  ]] /" Stress
+
+  %% ======================================================================
+  !date 100                                       %% early Vulgar Latin
+  %% ======================================================================
+  %% -m lost, except in monosyllables (QUEM > quien)
+  [m] --> 0 / ___#  /! #C*V___                    /" FinalMLoss
+  %% consonantal V [w] > [β] (b/v merger), but not in kw, gw
+  [v] --> {+Cons -Son !Labial _High _Low _Back _Round} /! Velar___ /" WToBeta
+
+  %% ======================================================================
+  !date 150
+  %% ======================================================================
+  %% Hiatus: an unstressed non-low vowel before a vowel becomes a glide
+  %% (FĪLIUM > filju, AQUAM > akwa, ARĀNEAM > aranja).  Persistent: it
+  %% re-applies whenever a later rule creates such a hiatus (ciudad).
+  V:{-Low 0Stress} --> {-Syll +High _ATR _Long} / ___V   /::  /" HiatusGlide
+
+  %% ======================================================================
+  !date 200                                       %% vowel system
+  %% ======================================================================
+  %% quantity becomes quality: long = tense, short = lax; length is lost
+  V:{(a)Long} --> {(a)ATR -Long}                  /" QualityForQuantity
+  %% lax high vowels lower and merge with the tense mids: ĭ > e, ŭ > o
+  V:{+High -ATR} --> {-High +ATR}                 /" LaxHighLowering
+
+  %% ======================================================================
+  !date 300                                       %% late Latin consonants
+  %% ======================================================================
+  %% geometry: a labial stop takes the whole Place of a following stop
+  %% (SEPTEM > sette, later siete)
+  {-Son -Cont !Labial} --> {(p)Place} / ___{-Son -Cont (p)Place} /" StopPlaceAssimilation
+  %% prothetic e- before s + consonant (SCHOLAM > escola)
+  0 --> TenseE / #___[s]C                         /" Prothesis
+  %% k before a front vowel or yod > ts (CĪVITĀTEM, CENTUM)
+  Velar:{-Voice} --> {_Place +Anterior +DelRel +Strident} / ___{-Back} /" VelarPalatalisation
+  %% the first step of kt > tʃ: k > j (FACTUM > fajto)
+  Velar --> '[j] / V___[t]                        /" KtToJt
+  %% l > j between a rounded back vowel and t (MULTUM > mojto)
+  [l] --> '[j] / {+Syll +Back +Round}___[t]        /" LtToJt
+
+  %% ======================================================================
+  !date 500                                       %% Western Romance lenition
+  %% ======================================================================
+  %% class correspondence: p t k > b d g between vowels (a liquid or glide
+  %% may follow).  Geminates are immune: tt has no vowel on both sides.
+  %% +VoicedStop merges (keeps other features): ts > dz as well as t > d (DECEM)
+  VoicelessStop --> +VoicedStop / V___(<<Liquid|Glide>>)V  /" Lenition
+  %% ...and only then degemination (counter-feeding: pp > p, not b).
+  %% Sonorant geminates ll nn rr wait for the date-1000 block.
+  <<{-Son}|[m]>> $1 --> $1                        /" Degemination
+
+  %% ======================================================================
+  !date 600                                       %% syncope, yod
+  %% ======================================================================
+  %% intertonic and post-tonic syncope.  Right to left and iterative, so
+  %% two adjacent candidates cannot both be lost (each deletion is seen by
+  %% the next search).
+  V:{0Stress -Low} --> 0 / V C___C V              /* /:<  /" Syncope
+  [[
+    <<[n]|[l]>> [j] --> {-Anterior}               /" YodPalatalisation
+    Velar [l] --> LY / V___                       /" MedialKL
+  ]] /" PalatalSonorants
+
+  %% ======================================================================
+  !date 700
+  %% ======================================================================
+  [[
+    [a] --> {-Low -Back +ATR} / ___[j]            /" ARaising
+    {+Syll -High +Back +Round +ATR} --> {+High} / ___[j] /" ORaising
+  ]] /" YodMetaphony
+  [j] [t] --> TSH                                 /" JtToTsh
+
+  %% ======================================================================
+  !date 800                                       %% diphthongisation
+  %% ======================================================================
+  %% stressed ɛ ɔ > je we: the vowel itself becomes the glide (it keeps Back
+  %% and Round, so ɛ > j and ɔ > w) and a tense e is inserted after it.
+  %% Blocked before a palatal (the yod effect: noche, ojo, hoja).
+  V:{-High -Low -ATR 2Stress} --> {-Syll +High _ATR _Long} TenseE /! ___Palatal /" Diphthongisation
+  %% remaining lax mids (unstressed, or blocked) become tense
+  V:{-Low -ATR} --> {+ATR}                        /" LaxMidTensing
+
+  %% ======================================================================
+  !date 900
+  %% ======================================================================
+  %% the ʎ of lj and k'l becomes ʒ (Old Spanish ojo [oʒo], fijo [fiʒo])
+  {+Lateral -Anterior} --> {-Son -Lateral +Strident} /" LateralToZh
+
+  %% ======================================================================
+  !date 1000                                      %% new palatal sonorants
+  %% ======================================================================
+  %% class correspondence with multi-segment input: ll > ʎ, nn > ɲ, rr > r
+  <<[l]|[n]|[r]>> $1 --> <<{-Anterior}|{-Anterior}|{+Trill}>> /" SonorantGeminates
+  %% initial pl kl fl > ʎ (llano, llave, llama)
+  <<[p]|[k]|[f]>> [l] --> LY / #___               /" InitialClusterPalatalisation
+
+  %% ======================================================================
+  !date 1100                                      %% Old Spanish
+  %% ======================================================================
+  %% apocope of -e after a single d l n r s z θ (sabor, pan, ciudad), but
+  %% not after t, a palatal or a cluster (siete, noche, madre)
+  [e] --> 0 / V ApocopeC ___#                     /" Apocope
+
+  %% ======================================================================
+  !date 1300
+  %% ======================================================================
+  %% initial f > h, except before a consonant or [w] (flor, fuego); two
+  %% negative contexts, either of which blocks the rule
+  [f] --> '[h] / #___  /! ___{+Cons}  /! ___{-Syll +Round}  /" FToH
+
+  %% ======================================================================
+  !date 1450
+  %% ======================================================================
+  %% β vocalises before d (cibdad > ciudad); the persistent HiatusGlide
+  %% then turns the preceding i into j
+  {-Son +Cont +Voice !Labial} --> {+Syll _Place +High -Low +Back +Round +ATR} / ___[d] /" BetaVocalisation
+
+  %% ======================================================================
+  !date 1500                                      %% spelling checkpoint
+  %% ======================================================================
+  %% Respelling block (see $Sp): runs on a copy, then the pronunciation is
+  %% restored, so the marks never reach later rules or the IPA output.
+  $pron := $_
+  {-Son -Cont -Voice !Dorsal} --> {!SpellMark} / ___{-Back}           /" SpellQu
+  {+DelRel +Anterior -Voice} --> {_Place !Dorsal _DelRel _Strident} / ___{-Back} /" SpellSoftC
+  {+DelRel +Anterior -Voice} --> {+Voice}                              /" SpellZ
+  $spell := $_
+  $_ := $pron
+
+  %% ======================================================================
+  !date 1550                                      %% Early Modern Spanish
+  %% ======================================================================
+  [h] --> 0                                       /" HLoss
+  {+Strident} --> {-Voice}                        /" SibilantDevoicing
+  !date 1600
+  {+Strident +Cont -Anterior} --> {_Place !Dorsal _Strident} /" Velarisation
+  {+DelRel +Anterior} --> {+Cont _DelRel -Strident}  /" Interdentalisation
+  {-Son +Cont +Voice !Labial} --> {-Cont}          /" BetaMerger
+
+  !print "%O[$Lat]{0}\t[%O[$IPA]{1}]\t%O[$Sp]{2}\n" $input $_ $spell
+]]

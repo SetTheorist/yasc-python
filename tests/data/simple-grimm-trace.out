@@ -1,0 +1,35 @@
+== pater
+  1  GrimmVoiceless  72  pater → faθer  (focus 0..1, 2..3)
+pater	pater	faθer	father
+== bʰrater
+  1  GrimmVoiceless  72  bʰrater → bʰraθer  (focus 3..4)
+  3  GrimmAspirated  78  bʰraθer → βraθer  (focus 0..1)
+  5  InitialHardening  84  βraθer → braθer  (focus 0..1)
+bʰrater	bʰrater	braθer	brother
+== dekan
+  1  GrimmVoiceless  72  dekan → dexan  (focus 2..3)
+  2  GrimmVoiced  75  dexan → texan  (focus 0..1)
+dekan	dekan	texan	ten
+== gʰostis
+  3  GrimmAspirated  78  gʰostis → ɣostis  (focus 0..1)
+  4  OToA  81  ɣostis → ɣastis  (focus 1..2)
+  5  InitialHardening  84  ɣastis → gastis  (focus 0..1)
+  6  FinalSVoicing  87  gastis → gastiz  (focus 5..6)
+gʰostis	gʰostis	gastiz	guest
+== genu
+  2  GrimmVoiced  75  genu → kenu  (focus 0..1)
+genu	genu	kenu	knee
+== tris
+  1  GrimmVoiceless  72  tris → θris  (focus 0..1)
+tris	tris	θris	three
+== dʰugater
+  1  GrimmVoiceless  72  dʰugater → dʰugaθer  (focus 4..5)
+  2  GrimmVoiced  75  dʰugaθer → dʰukaθer  (focus 2..3)
+  3  GrimmAspirated  78  dʰukaθer → ðukaθer  (focus 0..1)
+  5  InitialHardening  84  ðukaθer → dukaθer  (focus 0..1)
+dʰugater	dʰugater	dukaθer	daughter
+== porta
+  4  OToA  81  porta → parta  (focus 1..2)
+porta	porta	parta	gate
+== telefon
+telefon	telefon	telefon	telephone

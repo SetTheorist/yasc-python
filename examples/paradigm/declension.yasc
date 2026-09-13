@@ -1,0 +1,73 @@
+%% ==========================================================================
+%% declension.yasc -- a small Latin-style declension (plan P9, spec §9)
+%% ==========================================================================
+%% Each record names its paradigm in the "paradigm" column. Before the rules
+%% run, the record is expanded into one variant per cell, labelled with the
+%% cell name, and the rules then apply to every cell (spec §9). It shows:
+%%   - cells restricted by lexical features (/:L+ {!Place});
+%%   - a bracketed template <N: $_ > feeding a cyclic rule (/:C*, spec §8.6);
+%%   - identical cells merging, with their labels joined by | (spec §8.11).
+%% Run it with:
+%%   python3 -m yasc examples/paradigm/declension.yasc examples/paradigm/lexicon.tsv
+%% ==========================================================================
+
+$P := Phonology [[
+  Syll Binary
+  Voice Binary
+  Cont Binary
+  Nasal Binary
+  Lat Binary
+  Lab Binary
+  Dor Binary
+  High Binary
+  Back Binary
+]]
+
+$O := Orthography [[
+  [p t k b d g s m n l r] {-Syll}
+  [p t k s]               {-Voice}
+  [b d g m n l r]         {+Voice}
+  [p t k b d g m n]       {-Cont}
+  [s l r]                 {+Cont}
+  [m n]                   {+Nasal}
+  [p t k b d g s l r]     {-Nasal}
+  [l]                     {+Lat}
+  [r]                     {-Lat}
+  [p b m]                 {+Lab -Dor}
+  [t d s n l r]           {-Lab -Dor}
+  [k g]                   {-Lab +Dor}
+  [a e i o u]             {+Syll}
+  [i u]                   {+High}
+  [a e o]                 {-High}
+  [e i]                   {-Back -Lab}
+  [a]                     {+Back -Lab}
+  [o u]                   {+Back +Lab}
+]]
+
+V === {+Syll}
+C === {-Syll}
+
+$First := Paradigm [[
+  Nom.Sg : $_ - [a]
+  Acc.Sg : $_ - [am]
+  Gen.Sg : $_ - [ae]
+  Acc.Pl : $_ - [as]
+  Loc.Sg : <N: $_ > - [e]    /:L+ {!Place}
+]]
+
+$Second := Paradigm [[
+  Nom.Sg : $_ - [us]
+  Acc.Sg : $_ - [um]
+  Gen.Sg : $_ - [i]
+  Nom.Pl : $_ - [i]
+  Acc.Pl : $_ - [os]
+]]
+
+$R := Rules [[
+  %% In the N cycle of a Loc.Sg cell the stem is a domain of its own, so its
+  %% final gap counts as a word edge: a stem vowel is added there.
+  0 --> [a] / C ___ # /:C* /:C+ N      /" StemVowel
+  %% Late Latin: final m is lost, and u becomes o before a final s.
+  [m] --> 0 / ___ #                    /" FinalM
+  [u] --> [o] / ___ [s] #              /" UToO
+]]

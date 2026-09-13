@@ -1,0 +1,294 @@
+%% ==========================================================================
+%% ipa.yasc -- the YASC standard library (plan P10; design §13 entries 163-166)
+%% ==========================================================================
+%% Include it with   !include "lib:ipa.yasc"   (the "lib:" prefix names this
+%% directory, yasc/lib/, wherever the including script lives).  It defines:
+%%
+%%   $IPAPhonology  a Hayes-style feature system with feature geometry
+%%                  (Place > Labial Coronal Dorsal Pharyngeal; Laryngeal);
+%%   $IPA           an orthography in Unicode IPA (decomposed diacritics);
+%%   $XSAMPA        an X-SAMPA orthography with the same bundles.
+%%
+%% $XSAMPA is defined last, so it is the active (input and output)
+%% orthography after the include.  For X-SAMPA in and IPA out, write
+%%   !orthography input $XSAMPA output $IPA
+%% at top level, after the include.  [...] in patterns then uses $XSAMPA.
+%%
+%% X-SAMPA settings that differ from the YASC defaults (design §13 entry 58):
+%%   syllabic "=" is a diacritic, so the clitic separator is "/";
+%%   "_<" "_>" "<\" ">\" use < and >, so category brackets are ( ... ),
+%%   as in (N:kat); the label end stays ":" (a label is always read first);
+%%   "-" is the phone separator (the X-SAMPA convention), written only
+%%   where two phones would otherwise tokenise differently (t-s vs t_s);
+%%   stress: " (primary, 2Stress) and % (secondary, 1Stress) are syllable marks.
+%% The library defines no macros, so it never clashes with a script's own.
+%% ==========================================================================
+
+$IPAPhonology := Phonology [[
+  %% --- major class ---
+  Syll Binary
+    == Syllabic syllabic syl
+  Cons Binary
+    == Consonantal consonantal cons
+  Approx Binary
+    == Approximant approximant
+  Son Binary
+    == Sonorant sonorant son
+  %% --- manner ---
+  Cont Binary
+    == Continuant continuant cont
+  DelRel Binary
+    == DelayedRelease delrel
+  Nasal Binary
+    == nasal
+  Lateral Binary
+    == lateral
+  Tap Binary
+  Trill Binary
+  Strident Binary            %% sibilants: s z S Z s` z` s\ z\ and affricates ts dz tS dZ
+  Click Unary                %% velaric airstream: O\ |\ !\ =\ |\|\
+  %% --- laryngeal node ---
+  Laryngeal Node(Voice SpreadGl ConstrGl)
+  Voice Binary
+    == Voiced voiced voice
+  SpreadGl Binary
+    == SG SpreadGlottis
+  ConstrGl Binary
+    == CG ConstrictedGlottis
+  %% --- place: feature geometry (spec §4.3) ---
+  Place Node(Labial Coronal Dorsal Pharyngeal)
+  Labial Node(Round Labiodental)
+  Round Binary
+    == round
+  Labiodental Binary
+  Coronal Node(Anterior Distributed)
+  Anterior Binary
+    == Ant ant
+  Distributed Binary
+    == Dist dist
+  Dorsal Node(High Low Front Back)
+  High Binary
+    == high Hi
+  Low Binary
+    == low Lo
+  Front Binary
+    == front
+  Back Binary
+    == back
+  Pharyngeal Node(Epiglottal)
+  Epiglottal Binary
+  %% --- vowels ---
+  ATR Binary                 %% advanced tongue root; also raises near-open { 6 over a
+    == Tense tense
+  Reduced Unary              %% schwa @ (Hayes' [reduced])
+  %% --- length and prosody ---
+  Long Binary
+    == long
+  Stress Scalar(0,2) Scope(Syllable)
+
+  %% --- implications (spec §4.5) ---
+  {+High} --> {-Low}
+  {+Low} --> {-High}
+  {+Front} --> {-Back}
+  {+Back} --> {-Front}
+  {+SpreadGl} --> {-ConstrGl}
+  {+ConstrGl} --> {-SpreadGl}
+  {+Tap} --> {-Trill}
+  {+Trill} --> {-Tap}
+  {+Approx} --> {+Son}
+  {-Son} --> {-Approx}
+  {+Syll} ~~> {-Cons +Approx +Son +Cont -DelRel -Nasal -Lateral -Tap -Trill}
+  {+Son} ~~> {+Voice -SpreadGl -ConstrGl}
+  {-Son} ~~> {-Nasal -Tap -Trill}
+  {} ~~> {-Long}
+]]
+
+$IPA := Orthography [[
+  %% Generated from the $XSAMPA class lines below (same bundles); ejectives are
+  %% base + ʼ, and g is also accepted as ɡ (U+0261).
+  %% --- manner classes ---
+  [p b t d ʈ ɖ c ɟ k g ɡ q ɢ k͡p ʡ ɓ ɗ ʄ ɠ ʛ ʘ ǀ ǃ ǂ ǁ] {-Syll +Cons -Son -Cont -DelRel -Nasal -Tap -Trill -Strident}
+  [p b t d ʈ ɖ c ɟ k g ɡ q ɢ k͡p ʡ ɓ ɗ ʄ ɠ ʛ ʘ ǀ ǃ ǂ ǁ] {-Approx}
+  [ʘ ǀ ǃ ǂ ǁ]                           {!Click}
+  [p b t d ʈ ɖ c ɟ k g ɡ q ɢ k͡p ʡ ɓ ɗ ʄ ɠ ʛ ʘ ǀ ǃ ǂ] {-Lateral}
+  [ǁ]                                   {+Lateral}
+  [t͡s d͡z t͡ʃ d͡ʒ]                     {-Syll +Cons -Approx -Son -Cont +DelRel -Nasal -Lateral -Tap -Trill +Strident}
+  [ɸ β f v θ ð s z ʃ ʒ ʂ ʐ ç ʝ x ɣ χ ʁ ħ ʕ ʜ ʢ ɕ ʑ ɧ ɬ ɮ] {-Syll +Cons -Approx -Son +Cont +DelRel -Nasal -Tap -Trill}
+  [ɸ β f v θ ð s z ʃ ʒ ʂ ʐ ç ʝ x ɣ χ ʁ ħ ʕ ʜ ʢ ɕ ʑ ɧ] {-Lateral}
+  [ɬ ɮ]                                 {+Lateral}
+  [s z ʃ ʒ ʂ ʐ ɕ ʑ]                     {+Strident}
+  [ɸ β f v θ ð ç ʝ x ɣ χ ʁ ħ ʕ ʜ ʢ ɧ ɬ ɮ] {-Strident}
+  [m ɱ n ɳ ɲ ŋ ɴ]                       {-Syll +Cons -Approx +Son -Cont -DelRel +Nasal -Lateral -Tap -Trill}
+  [ʙ r ʀ]                               {-Syll +Cons +Approx +Son +Cont -DelRel -Nasal -Lateral -Tap +Trill}
+  [ɾ ɽ ɺ]                               {-Syll +Cons +Approx +Son +Cont -DelRel -Nasal +Tap -Trill}
+  [ɾ ɽ]                                 {-Lateral}
+  [ɺ]                                   {+Lateral}
+  [ɹ ɻ l ɭ ʎ ʟ]                         {-Syll +Cons +Approx +Son +Cont -DelRel -Nasal -Tap -Trill}
+  [ɹ ɻ]                                 {-Lateral}
+  [l ɭ ʎ ʟ]                             {+Lateral}
+  [j w ɥ ɰ ʍ ʋ]                         {-Syll -Cons +Approx +Son +Cont -DelRel -Nasal -Lateral -Tap -Trill}
+  [ʔ h ɦ]                               {-Syll -Cons -Approx -Son -Nasal -Lateral -Tap -Trill -Strident}
+  [ʔ]                                   {-Cont -DelRel}
+  [h ɦ]                                 {+Cont +DelRel}
+  [i y ɪ ʏ ɨ ʉ ɯ u ʊ e ø ɘ ɵ ɤ o ə ɛ œ ɜ ɞ ʌ ɔ æ ɐ a ɶ ɑ ɒ] {+Syll -Cons +Approx +Son +Cont -DelRel -Nasal -Lateral -Tap -Trill}
+
+  %% --- laryngeal ---
+  [p t ʈ c k q k͡p ʡ ɸ f θ s ʃ ʂ ç x χ ħ ʜ ɕ ɧ ɬ t͡s t͡ʃ ʍ ʘ ǀ ǃ ǂ ǁ] {-Voice -SpreadGl -ConstrGl}
+  [b d ɖ ɟ g ɡ ɢ β v ð z ʒ ʐ ʝ ɣ ʁ ʕ ʢ ʑ ɮ d͡z d͡ʒ] {+Voice -SpreadGl -ConstrGl}
+  [m ɱ n ɳ ɲ ŋ ɴ ʙ r ʀ ɾ ɽ ɺ ɹ ɻ l ɭ ʎ ʟ j w ɥ ɰ ʋ] {+Voice -SpreadGl -ConstrGl}
+  [i y ɪ ʏ ɨ ʉ ɯ u ʊ e ø ɘ ɵ ɤ o ə ɛ œ ɜ ɞ ʌ ɔ æ ɐ a ɶ ɑ ɒ] {+Voice -SpreadGl -ConstrGl}
+  [ɓ ɗ ʄ ɠ ʛ]                           {+Voice -SpreadGl +ConstrGl}
+  [ʔ]                                   {-Voice -SpreadGl +ConstrGl}
+  [h]                                   {-Voice +SpreadGl -ConstrGl}
+  [ɦ]                                   {+Voice +SpreadGl -ConstrGl}
+
+  %% --- place ---
+  [p b m ʙ ɸ β ʘ ɓ k͡p]                 {-Round -Labiodental}
+  [ɱ f v ʋ]                             {-Round +Labiodental}
+  [w ʍ ɥ]                               {+Round -Labiodental}
+  [θ ð ǀ]                               {+Anterior +Distributed}
+  [t d n r ɾ s z ɹ l ɺ ɬ ɮ t͡s d͡z ɗ ǃ ǁ] {+Anterior -Distributed}
+  [ʃ ʒ t͡ʃ d͡ʒ ǂ]                       {-Anterior +Distributed}
+  [ʈ ɖ ɳ ʂ ʐ ɽ ɻ ɭ]                     {-Anterior -Distributed}
+  [c ɟ ɲ ç ʝ j ʎ ʄ ɥ ɕ ʑ ɧ]             {-Anterior +Distributed}
+  [c ɟ ɲ ç ʝ j ʎ ʄ ɥ ɕ ʑ]               {+High -Low +Front -Back}
+  [k g ɡ ŋ x ɣ ɰ w ʍ k͡p ɠ ʟ ɧ]         {+High -Low -Front +Back}
+  [q ɢ ɴ χ ʁ ʀ ʛ]                       {-High -Low -Front +Back}
+  [ħ ʕ]                                 {-Epiglottal}
+  [ʜ ʢ ʡ]                               {+Epiglottal}
+
+  %% --- vowels: height, backness, rounding, ATR ---
+  [i y ɪ ʏ ɨ ʉ ɯ u ʊ]                   {+High -Low}
+  [e ø ɘ ɵ ɤ o ə ɛ œ ɜ ɞ ʌ ɔ]           {-High -Low}
+  [æ ɐ a ɶ ɑ ɒ]                         {-High +Low}
+  [i y ɪ ʏ e ø ɛ œ æ a ɶ]               {+Front -Back}
+  [ɨ ʉ ɘ ɵ ə ɜ ɞ ɐ]                     {-Front -Back}
+  [ɯ u ʊ ɤ o ʌ ɔ ɑ ɒ]                   {-Front +Back}
+  [y ʏ ʉ u ʊ ø ɵ o œ ɞ ɔ ɶ ɒ]           {+Round}
+  [i ɪ ɨ ɯ e ɘ ɤ ə ɛ ɜ ʌ æ ɐ a ɑ]       {-Round}
+  [i y ɨ ʉ ɯ u e ø ɘ ɵ ɤ o æ ɐ]         {+ATR}
+  [ɪ ʏ ʊ ɛ œ ɜ ɞ ʌ ɔ ə a ɶ ɑ ɒ]         {-ATR}
+  [ə]                                   {!Reduced}
+
+  
+
+  %% --- diacritics: combining marks follow the base (decomposed input, NFD) ---
+  {-Voice} ==> [#̥]
+  {+Voice} ==> [#̬]
+  {+SpreadGl} ==> [#ʰ]
+  {+Voice +ConstrGl} ==> [#̰]
+  {-Voice +ConstrGl} ==> [#ʼ]
+  {+Syll} ==> [#̩]
+  {-Syll} ==> [#̯]
+  {+Nasal} ==> [#̃]
+  {+Round} ==> [#ʷ]
+  {+Front} ==> [#ʲ]
+  {+Back} ==> [#ˠ]
+  {-Epiglottal} ==> [#ˤ]
+  {+Anterior +Distributed} ==> [#̪]
+  {-Anterior -Distributed} ==> [#˞]
+  {+ATR} ==> [#̘]
+  {-ATR} ==> [#̙]
+  {+Long} ==> [#ː]
+
+  %% --- settings: the YASC defaults, except the stress marks ---
+  SyllableMark {2Stress} == [ˈ]
+  SyllableMark {1Stress} == [ˌ]
+]]
+
+$XSAMPA := Orthography [[
+  %% --- manner classes ---
+  [p b t d t` d` c J\ k g q G\ k_p >\ b_< d_< J\_< g_< G\_< p_> t_> c_> k_> O\ |\ !\ =\ |\|\] {-Syll +Cons -Son -Cont -DelRel -Nasal -Tap -Trill -Strident}
+  [p b t d t` d` c J\ k g q G\ k_p >\ b_< d_< J\_< g_< G\_< p_> t_> c_> k_> O\ |\ !\ =\ |\|\] {-Approx}
+  [O\ |\ !\ =\ |\|\]                    {!Click}
+  [p b t d t` d` c J\ k g q G\ k_p >\ b_< d_< J\_< g_< G\_< p_> t_> c_> k_> O\ |\ !\ =\] {-Lateral}
+  [|\|\]                                {+Lateral}
+  [t_s d_z t_S d_Z]                     {-Syll +Cons -Approx -Son -Cont +DelRel -Nasal -Lateral -Tap -Trill +Strident}
+  [p\ B f v T D s z S Z s` z` C j\ x G X R X\ ?\ H\ <\ s\ z\ x\ K K\ s_>] {-Syll +Cons -Approx -Son +Cont +DelRel -Nasal -Tap -Trill}
+  [p\ B f v T D s z S Z s` z` C j\ x G X R X\ ?\ H\ <\ s\ z\ x\ s_>] {-Lateral}
+  [K K\]                                {+Lateral}
+  [s z S Z s` z` s\ z\ s_>]             {+Strident}
+  [p\ B f v T D C j\ x G X R X\ ?\ H\ <\ x\ K K\] {-Strident}
+  [m F n n` J N N\]                     {-Syll +Cons -Approx +Son -Cont -DelRel +Nasal -Lateral -Tap -Trill}
+  [B\ r R\]                             {-Syll +Cons +Approx +Son +Cont -DelRel -Nasal -Lateral -Tap +Trill}
+  [4 r` l\]                             {-Syll +Cons +Approx +Son +Cont -DelRel -Nasal +Tap -Trill}
+  [4 r`]                                {-Lateral}
+  [l\]                                  {+Lateral}
+  [r\ r\` l l` L L\]                    {-Syll +Cons +Approx +Son +Cont -DelRel -Nasal -Tap -Trill}
+  [r\ r\`]                              {-Lateral}
+  [l l` L L\]                           {+Lateral}
+  [j w H M\ W P v\]                     {-Syll -Cons +Approx +Son +Cont -DelRel -Nasal -Lateral -Tap -Trill}
+  [? h h\]                              {-Syll -Cons -Approx -Son -Nasal -Lateral -Tap -Trill -Strident}
+  [?]                                   {-Cont -DelRel}
+  [h h\]                                {+Cont +DelRel}
+  [i y I Y 1 } M u U e 2 @\ 8 7 o @ E 9 3 3\ V O { 6 a & A Q] {+Syll -Cons +Approx +Son +Cont -DelRel -Nasal -Lateral -Tap -Trill}
+
+  %% --- laryngeal ---
+  [p t t` c k q k_p >\ p\ f T s S s` C x X X\ H\ s\ x\ K t_s t_S W O\ |\ !\ =\ |\|\] {-Voice -SpreadGl -ConstrGl}
+  [b d d` J\ g G\ B v D z Z z` j\ G R ?\ <\ z\ K\ d_z d_Z] {+Voice -SpreadGl -ConstrGl}
+  [m F n n` J N N\ B\ r R\ 4 r` l\ r\ r\` l l` L L\ j w H M\ P v\] {+Voice -SpreadGl -ConstrGl}
+  [i y I Y 1 } M u U e 2 @\ 8 7 o @ E 9 3 3\ V O { 6 a & A Q] {+Voice -SpreadGl -ConstrGl}
+  [b_< d_< J\_< g_< G\_<]               {+Voice -SpreadGl +ConstrGl}
+  [p_> t_> c_> k_> s_>]                 {-Voice -SpreadGl +ConstrGl}
+  [?]                                   {-Voice -SpreadGl +ConstrGl}
+  [h]                                   {-Voice +SpreadGl -ConstrGl}
+  [h\]                                  {+Voice +SpreadGl -ConstrGl}
+
+  %% --- place ---
+  [p b m B\ p\ B O\ p_> b_< k_p]        {-Round -Labiodental}
+  [F f v P v\]                          {-Round +Labiodental}
+  [w W H]                               {+Round -Labiodental}
+  [T D |\]                              {+Anterior +Distributed}
+  [t d n r 4 s z r\ l l\ K K\ t_s d_z t_> d_< s_> !\ |\|\] {+Anterior -Distributed}
+  [S Z t_S d_Z =\]                      {-Anterior +Distributed}
+  [t` d` n` s` z` r` r\` l`]            {-Anterior -Distributed}
+  [c J\ J C j\ j L J\_< c_> H s\ z\ x\] {-Anterior +Distributed}
+  [c J\ J C j\ j L J\_< c_> H s\ z\]    {+High -Low +Front -Back}
+  [k g N x G M\ w W k_p k_> g_< L\ x\]  {+High -Low -Front +Back}
+  [q G\ N\ X R R\ G\_<]                 {-High -Low -Front +Back}
+  [X\ ?\]                               {-Epiglottal}
+  [H\ <\ >\]                            {+Epiglottal}
+
+  %% --- vowels: height, backness, rounding, ATR ---
+  [i y I Y 1 } M u U]                   {+High -Low}
+  [e 2 @\ 8 7 o @ E 9 3 3\ V O]         {-High -Low}
+  [{ 6 a & A Q]                         {-High +Low}
+  [i y I Y e 2 E 9 { a &]               {+Front -Back}
+  [1 } @\ 8 @ 3 3\ 6]                   {-Front -Back}
+  [M u U 7 o V O A Q]                   {-Front +Back}
+  [y Y } u U 2 8 o 9 3\ O & Q]          {+Round}
+  [i I 1 M e @\ 7 @ E 3 V { 6 a A]      {-Round}
+  [i y 1 } M u e 2 @\ 8 7 o { 6]        {+ATR}
+  [I Y U E 9 3 3\ V O @ a & A Q]        {-ATR}
+  [@]                                   {!Reduced}
+
+  %% --- diacritics (declaration order breaks rendering ties) ---
+  {-Voice} ==> [#_0]
+  {+Voice} ==> [#_v]
+  {+SpreadGl} ==> [#_h]
+  {+Voice +ConstrGl} ==> [#_k]
+  {+Voice +ConstrGl} ==> [#_<]
+  {-Voice +ConstrGl} ==> [#_>]
+  {+Syll} ==> [#=]
+  {+Syll} ==> [#_=]
+  {-Syll} ==> [#_^]
+  {+Nasal} ==> [#~]
+  {+Nasal} ==> [#_~]
+  {+Round} ==> [#_w]
+  {+Front} ==> [#_j]
+  {+Back} ==> [#_G]
+  {-Epiglottal} ==> [#_?\]
+  {+Anterior +Distributed} ==> [#_d]
+  {-Anterior -Distributed} ==> [#`]
+  {+ATR} ==> [#_A]
+  {-ATR} ==> [#_q]
+  {+Long} ==> [#:]
+
+  %% --- settings ---
+  PhoneSeparator == [-]
+  CliticSeparator == [/]
+  BracketOpen == [(]
+  BracketClose == [)]
+  SyllableMark {2Stress} == ["]
+  SyllableMark {1Stress} == [%]
+]]

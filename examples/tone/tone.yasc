@@ -1,0 +1,51 @@
+%% Bantu-style tone (plan P8 example; spec §5.5, §6.5).
+%%
+%% Underlying forms carry their lexical tones as floating autosegments (^' = H, ^` = L)
+%% or already linked to a vowel (a'). The derivation:
+%%   1. the Association Convention links floating tones one-to-one, left to right;
+%%   2. H doubling: a H spreads to the next vowel if that vowel is toneless and not final;
+%%   3. default L on the vowels that are still toneless;
+%%   4. the OCP fuses adjacent identical tones (one H linked to two vowels);
+%%   5. downstep, a tier-only rule: a H after H L becomes M.
+
+$P := Phonology [[
+  Syll Binary
+  High Binary
+  Back Binary
+  Nasal Binary
+  Voice Binary
+  Lateral Binary
+  Place [lab] [cor] [dor]
+  Tone [H] [L] [M] [HL] Tier(TBU={+Syll}, Stray=float, OCP=off)
+]]
+
+$O := Orthography [[
+  [p t k]   {-Syll -Nasal -Voice}
+  [b d g]   {-Syll -Nasal +Voice}
+  [m n]     {-Syll +Nasal +Voice}
+  [l]       {-Syll -Nasal +Voice +Lateral}
+  [p b m]   {[lab]Place}
+  [t d n l] {[cor]Place}
+  [k g]     {[dor]Place}
+  [a] {+Syll -High +Back}
+  [e] {+Syll -High -Back}
+  [i] {+Syll +High -Back}
+  [u] {+Syll +High +Back}
+  {[H]Tone}  ==> [#']
+  {[L]Tone}  ==> [#`]
+  {[M]Tone}  ==> [#-]
+  {[HL]Tone} ==> [#~]
+]]
+
+V === {+Syll}
+C === {-Syll}
+
+$R := Rules [[
+  $ur := $_
+  !associate Tone spread=none
+  V^0 --> V^=h / V^[H]=h C* ___ C* V         /" Doubling
+  V^0 --> V^[L]                              /" DefaultL
+  !ocp Tone merge
+  [H] --> [M] / [H] [L] ___  /:T Tone        /" Downstep
+  !print "%O{0}\t%O{1}\n" $ur $_
+]]

@@ -1,0 +1,64 @@
+%% ==========================================================================
+%% proto.yasc -- a proto-language splitting into two daughters (plan P9)
+%% ==========================================================================
+%% The common changes run first; "!dialects (West East)" then splits every
+%% word into one variant per daughter (spec §10.4), and the rules after it
+%% are restricted with /:D+ and /:D- (spec §8.6). A record whose "dialect"
+%% column names one daughter only is processed for that daughter only.
+%% Run it with one column per daughter:
+%%   python3 -m yasc examples/dialects/proto.yasc examples/dialects/lexicon.tsv --wide
+%% or for one daughter:  ... --dialect East
+%% ==========================================================================
+
+$P := Phonology [[
+  Syll Binary
+  Voice Binary
+  Cont Binary
+  Nasal Binary
+  Lat Binary
+  Lab Binary
+  Dor Binary
+  High Binary
+  Back Binary
+]]
+
+$O := Orthography [[
+  [p t k b d g s m n l r] {-Syll}
+  [p t k s]               {-Voice}
+  [b d g m n l r]         {+Voice}
+  [p t k b d g m n]       {-Cont}
+  [s l r]                 {+Cont}
+  [m n]                   {+Nasal}
+  [p t k b d g s l r]     {-Nasal}
+  [l]                     {+Lat}
+  [r]                     {-Lat}
+  [p b m]                 {+Lab -Dor}
+  [t d s n l r]           {-Lab -Dor}
+  [k g]                   {-Lab +Dor}
+  [a e i o u]             {+Syll}
+  [i u]                   {+High}
+  [a e o]                 {-High}
+  [e i]                   {-Back -Lab}
+  [a]                     {+Back -Lab}
+  [o u]                   {+Back +Lab}
+]]
+
+V === {+Syll}
+C === {-Syll}
+
+$R := Rules [[
+  %% Common: final e is raised.
+  [e] --> [i] / ___ #                               /" FinalRaising
+
+  !dialects (West East)
+
+  %% West: intervocalic voicing, and u is lowered.
+  {-Syll -Voice -Cont} --> {+Voice} / V ___ V /:D+ West   /" Voicing
+  [u] --> [o]                                   /:D+ West   /" Lowering
+
+  %% East: k becomes t before a front vowel, and final a is fronted.
+  [[
+    [k] --> [t] / ___ {+Syll -Back}                         /" Palatal
+    [a] --> [e] / ___ #                                     /" Fronting
+  ]] /:D- West
+]]

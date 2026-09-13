@@ -1,0 +1,7 @@
+#! id	name	date	line	pending	rule
+1	GrimmVoiceless	-500	72	-	{-Son -Cont -Voice} --> {+Cont} /! [s] ___ /" GrimmVoiceless
+2	GrimmVoiced	-400	75	-	{-Son -Cont +Voice -Asp} --> {-Voice} /" GrimmVoiced
+3	GrimmAspirated	-300	78	-	{+Asp} --> {-Asp +Cont} /" GrimmAspirated
+4	OToA	100	81	-	[o] --> [a] /" OToA
+5	InitialHardening	200	84	-	{-Son +Cont +Voice} --> {-Cont} / # ___ /" InitialHardening
+6	FinalSVoicing	300	87	-	[s] --> [z] / V ___ # /:L+ {!N} /" FinalSVoicing

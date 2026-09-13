@@ -1,0 +1,51 @@
+#! form	gloss	expected_ipa	expected_spelling	note
+%% Latin forms in $Lat: accusative singular (the source of Spanish nouns),
+%% capitals, macrons for long vowels.  V = [w], U = [u].
+FACTUM	'done, deed'	ˈetʃo	hecho	kt > jt > tʃ; a > e before yod; f > h > 0
+NOCTEM	'night'	ˈnotʃe	noche	kt > tʃ; yod blocks diphthongisation; -e kept after tʃ
+OCTŌ	'eight'	ˈotʃo	ocho	kt > tʃ; ɔ not diphthongised
+LACTEM	'milk'	ˈletʃe	leche	a > e before yod
+STRICTUM	'narrow'	esˈtɾetʃo	estrecho	prothesis; ĭ > e; kt > tʃ
+MULTUM	'much'	ˈmutʃo	mucho	ŭ > o; lt > jt; o > u before yod
+OCULUM	'eye'	ˈoxo	ojo	syncope; k > g; g'l > ʎ > ʒ > x; no diphthong
+FĪLIUM	'son'	ˈixo	hijo	hiatus i > j; lj > ʎ > ʒ > x; f > h > 0
+FOLIAM	'leaf'	ˈoxa	hoja	lj > ʎ > ʒ > x; yod blocks diphthongisation
+PETRAM	'stone'	ˈpjedɾa	piedra	ɛ > je; tr > dr
+PORTAM	'door'	ˈpweɾta	puerta	ɔ > we
+BONUM	'good'	ˈbweno	bueno	ɔ > we; -um > -o
+TERRAM	'earth'	ˈtjera	tierra	ɛ > je; rr > trill
+FERRUM	'iron'	ˈjero	hierro	f > h also before j; rr > trill
+SEPTEM	'seven'	ˈsjete	siete	pt > tt (Place node) > t; no lenition of the geminate
+CENTUM	'hundred'	ˈθjento	ciento	k > ts > θ; ɛ > je
+NOVUM	'new'	ˈnwebo	nuevo	w > β > b; ɔ > we
+CLĀVEM	'key'	ˈʎabe	llave	initial kl > ʎ; w > β > b; -e kept after β
+PLĒNUM	'full'	ˈʎeno	lleno	initial pl > ʎ
+FLAMMAM	'flame'	ˈʎama	llama	initial fl > ʎ; mm > m
+CAPILLUM	'hair'	kaˈbeʎo	cabello	closed penult stressed; p > b; ll > ʎ
+ANNUM	'year'	ˈaɲo	año	nn > ɲ
+SENIŌREM	'lord'	seˈɲoɾ	señor	long penult; nj > ɲ; apocope
+ARĀNEAM	'spider'	aˈɾaɲa	araña	antepenult stress; hiatus e > j; nj > ɲ
+LUPUM	'wolf'	ˈlobo	lobo	ŭ > o; p > b
+VĪTAM	'life'	ˈbida	vida	w > β (spelled v) > b; t > d
+VĪNUM	'wine'	ˈbino	vino	w > β > b
+MĀTŪRUM	'ripe'	maˈduɾo	maduro	long penult; t > d
+AMĪCUM	'friend'	aˈmigo	amigo	long penult; k > g
+FĪCUM	'fig'	ˈigo	higo	f > h > 0; k > g
+FOCUM	'fire'	ˈfwego	fuego	f kept before w; ɔ > we; k > g
+LOCUM	'place'	ˈlwego	luego	ɔ > we; k > g
+CAPRAM	'goat'	ˈkabɾa	cabra	p > b before r
+TŌTUM	'all'	ˈtodo	todo	t > d
+MANUM	'hand'	ˈmano	mano	control: only -um > -o and stress
+SPATHAM	'sword'	esˈpada	espada	prothesis; TH = t; t > d
+SCHOLAM	'school'	esˈkwela	escuela	prothesis; ɔ > we; CH = k
+AQUAM	'water'	ˈagwa	agua	hiatus u > w; kw > gw
+FARĪNAM	'flour'	aˈɾina	harina	long penult; f > h > 0
+SAPŌREM	'taste'	saˈboɾ	sabor	p > b; apocope after r
+PĀNEM	'bread'	ˈpan	pan	apocope after n
+MARE	'sea'	ˈmaɾ	mar	apocope after r
+SŌLEM	'sun'	ˈsol	sol	apocope after l
+MĀTREM	'mother'	ˈmadɾe	madre	-e kept after a cluster
+CANTĀRE	'to sing'	kanˈtaɾ	cantar	long penult; apocope
+CĪVITĀTEM	'city'	θjuˈdad	ciudad	w > β; lenition; syncope; ts > θ; β > u; persistent hiatus glide
+FĒMINAM	'woman'	ˈembɾa	hembra	NOT DERIVED: m'n > mbr (epenthesis) is not modelled; the rules give [ˈemna], spelled hemna
+DECEM	'ten'	ˈdjeθ	diez	k > ts; Lenition ts > dz (the non-strict [t] also matches ts); ɛ > je; apocope after dz; dz spelled z

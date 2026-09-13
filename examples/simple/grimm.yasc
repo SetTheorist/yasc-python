@@ -1,0 +1,90 @@
+%% ==========================================================================
+%% grimm.yasc -- a small, runnable YASC example (plan P6)
+%% ==========================================================================
+%% Toy "Proto-Indo-European" roots through Grimm's law and a few later
+%% changes.  It shows:
+%%   - dated rules (!date) and dated records: the loanwords in lexicon.tsv
+%%     carry a date, so only rules dated strictly later apply to them;
+%%   - a lexical restriction (/:L+ {!N}: nouns only), read from the
+%%     "features" column of the lexicon;
+%%   - variables ($proto := $_) and !print with %I, %O and %F.
+%% Run it with:
+%%   python3 -m yasc examples/simple/grimm.yasc examples/simple/lexicon.tsv
+%% No syllables, tiers, dialects or paradigms (plan P7-P9) are used.
+%% ==========================================================================
+
+$P := Phonology [[
+  Syll Binary
+  Son Binary
+  Cont Binary
+  Voice Binary
+  Asp Binary                 %% aspiration: bʰ dʰ gʰ
+  Strident Binary            %% s z (vs θ ð)
+  Nasal Binary
+  Lateral Binary
+  Place Node(Labial Coronal Dorsal)
+  Labial Unary
+  Coronal Unary
+  Dorsal Unary
+  High Binary
+  Low Binary
+  Back Binary
+  Round Binary
+  {+Syll} --> {+Son +Cont +Voice -Asp -Nasal -Lateral}
+  {+Nasal} --> {+Son -Cont +Voice -Asp -Lateral}
+  {+High} --> {-Low}
+  {+Low} --> {-High}
+]]
+
+$O := Orthography [[
+  [p t k b d g bʰ dʰ gʰ f θ x β ð ɣ s z] {-Syll -Son -Nasal -Lateral}
+  [p t k b d g bʰ dʰ gʰ] {-Cont}
+  [f θ x β ð ɣ s z]      {+Cont}
+  [p t k f θ x s]        {-Voice -Asp}
+  [b d g β ð ɣ z]        {+Voice -Asp}
+  [bʰ dʰ gʰ]             {+Voice +Asp}
+  [p t k b d g bʰ dʰ gʰ f θ x β ð ɣ] {-Strident}
+  [s z]                  {+Strident}
+  [m n]                  {-Syll +Nasal}
+  [l r]                  {-Syll +Son +Cont +Voice -Asp -Nasal}
+  [l]                    {+Lateral}
+  [r]                    {-Lateral}
+  [p b bʰ f β m]         {!Labial}
+  [t d dʰ θ ð s z n l r] {!Coronal}
+  [k g gʰ x ɣ]           {!Dorsal}
+  [i e a o u]            {+Syll}
+  [i u]                  {+High}
+  [e o]                  {-High -Low}
+  [a]                    {+Low}
+  [i e]                  {-Back -Round}
+  [a]                    {+Back -Round}
+  [o u]                  {+Back +Round}
+]]
+
+V === {+Syll}
+C === {-Syll}
+
+$R := Rules [[
+  $proto := $_
+
+  !date -500
+  %% Grimm 1: voiceless stops become fricatives, except after s
+  {-Son -Cont -Voice} --> {+Cont} /! [s] ___       /" GrimmVoiceless
+  !date -400
+  %% Grimm 2: plain voiced stops devoice (counter-feeding: no *f from b)
+  {-Son -Cont +Voice -Asp} --> {-Voice}            /" GrimmVoiced
+  !date -300
+  %% Grimm 3: aspirated stops become voiced fricatives
+  {+Asp} --> {-Asp +Cont}                          /" GrimmAspirated
+
+  !date 100
+  [o] --> [a]                                      /" OToA
+  !date 200
+  %% voiced fricatives harden word-initially
+  {-Son +Cont +Voice} --> {-Cont} / # ___          /" InitialHardening
+  !date 300
+  %% final s voices after a vowel, in nouns only (lexical feature N)
+  [s] --> [z] / V ___ #  /:L+ {!N}                 /" FinalSVoicing
+
+  !print "%I{0}\t%O{1}\t%O{2}\t%F{3}\n" $in $proto $_ $field[2]
+]]

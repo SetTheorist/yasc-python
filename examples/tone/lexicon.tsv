@@ -1,0 +1,11 @@
+#! form	gloss
+%% Plan P8 tone example. Floating tones are written ^' (H) and ^` (L) before the stem;
+%% a' is a vowel with a linked H. A floating tone belongs to the word it is written in.
+^'kalamu	pen
+^'^'mukati	inside
+^`^'tabala	board
+^'^`^'bakatita	they will pull
+ta'bala	stone
+kalamu	(toneless: default L)
+^'kalamu b^'ana	pen of the child
+^'^`tu	(extra tone stays floating)

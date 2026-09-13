@@ -1,0 +1,60 @@
+$P := Phonology [[
+  Syll Binary
+  Voice Binary
+  Nasal Binary
+  Place Node(Labial Coronal Dorsal)
+  Labial Unary
+  Coronal Unary
+  Dorsal Unary
+  High Binary
+    == Hi hi
+  Low Binary
+  {+High} --> {-Low}
+  {+Low} --> {-High}
+  Stress Scalar(0,2) Scope(Syllable)
+    (<Max>) 2 2 2
+  Tone [H] [L] [M] [HL] [LH] [HM] [MH] Tier(TBU={+Syll}, Stray=float)
+  {+Syll} ~~> {+Voice}
+  {+Nasal} --> {+Voice}
+]]
+
+$O := Orthography [[
+  [p t k] {-Syll -Voice -Nasal}
+  [b d g] {-Syll +Voice -Nasal}
+  [m n]   {-Syll +Nasal}
+  [p b m] {!Labial}
+  [t d n] {!Coronal}
+  [k g]   {!Dorsal}
+  [i u] {+Syll +High}
+  [a]   {+Syll +Low}
+  {-Voice} ==> [#_0]
+  {[H]Tone} ==> [#']
+  {[L]Tone} ==> [#`]
+  MorphemeSeparator == [+]
+  SyllableSeparator == [.]
+  SyllableMark {2Stress} == ["]
+]]
+
+Syllabification [[
+  Onset (C)
+  Nucleus V
+  Coda (C)
+]]
+
+V === {+Syll}
+C === {-Syll}
+
+$R := Rules [[
+  $input := $_
+  !date 100
+  V --> 0 / ___#  /! #C*___                  %% final V loss except in monosyllables
+  {+Nasal} --> {(p)Place} / ___ C:{(p)Place} %% nasal place assimilation
+  !date 400
+  V --> {+Nasal} / {+Nasal} ___  /*          %% rightward nasal spreading
+  V^0 --> V^=h / V^*=h C* ___  /*            %% tone spreading onto toneless vowels
+  ||[[
+    '[t] --> '[d] / #___
+    '[d] --> '[t] / #___
+  ]]
+  !print "%O{0} > %O{1}\n" $input $_
+]]

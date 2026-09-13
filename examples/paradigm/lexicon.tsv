@@ -1,0 +1,7 @@
+#! form	gloss	paradigm	features
+%% Stems tagged with their paradigm (spec §10.2 "paradigm" column); !Place
+%% marks place names, which also get a locative cell.
+rom	Rome	First	!Place
+ros	rose	First
+lup	wolf	Second
+mur	wall	Second

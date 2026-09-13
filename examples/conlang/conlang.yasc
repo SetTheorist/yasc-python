@@ -1,0 +1,47 @@
+%% ==========================================================================
+%% conlang.yasc -- a quick, SCA-style conlang derivation (plan P10)
+%% ==========================================================================
+%% Old Kaltic > Middle Kaltic, an invented language.  It shows the "quick"
+%% style of YASC: no Phonology or Orthography of its own, only the standard
+%% library, macros over orthographic classes, and a handful of rules.
+%%   - !include "lib:ipa.yasc": features, X-SAMPA input, IPA output;
+%%   - macros over orthographic classes (Stop, Voiced, Fric);
+%%   - class correspondence: Stop --> Voiced voices p t k to b d g, index by index;
+%%   - counter-feeding order: spirantization runs before lenition, so the new
+%%     b d g of lenition stay stops;
+%%   - place assimilation through feature geometry ((p)Place);
+%%   - vowel harmony with /* and /:F- V (only vowels are visible), with low a opaque;
+%%   - an optional rule (/???): apocope gives two variants, labelled.
+%% Run it with:
+%%   python3 -m yasc examples/conlang/conlang.yasc examples/conlang/lexicon.tsv
+%% ==========================================================================
+
+!include "lib:ipa.yasc"
+!orthography input $XSAMPA output $IPA
+
+V === {+Syll}
+C === {-Syll}
+Stop   === <<[p]|[t]|[k]>>
+Voiced === <<[b]|[d]|[g]>>
+Fric   === <<[B]|[D]|[G]>>
+
+$R := Rules [[
+  %% 1. Voiced stops spirantize after a vowel (b d g > β ð ɣ).
+  Voiced --> Fric / V ___                                   /" Spirantization
+
+  %% 2. Voiceless stops voice between vowels (p t k > b d g).  Rule 1 has
+  %%    already run, so these new voiced stops stay stops (counter-feeding).
+  Stop --> Voiced / V ___ V                                 /" Lenition
+
+  %% 3. A nasal takes the place of a following consonant (n > m / _p, n > ŋ / _k).
+  {+Nasal} --> {(p)Place} / ___ C:{(p)Place}               /" NasalPlace
+
+  %% 4. Backness harmony: a non-low vowel copies Front and Back from the vowel
+  %%    before it, left to right (/*), looking only at vowels (/:F- V).  Low a is
+  %%    never a trigger or a target, so it blocks the harmony.
+  V:{-Low} --> {(b)Back (f)Front} / V:{-Low (b)Back (f)Front} ___  /:F- V  /*   /" Harmony
+
+  %% 5. Optional apocope of a final vowel after a consonant, in words of two or
+  %%    more syllables: every word gets both outcomes, labelled Apocope:yes / :no.
+  V --> 0 / V C ___ #  /???                                 /" Apocope
+]]

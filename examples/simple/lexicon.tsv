@@ -1,0 +1,13 @@
+#! form	gloss	features	date
+%% Toy "Proto-Indo-European" roots (plan P6 example).  The features column
+%% marks nouns (!N); the date column marks loanwords, which escape every
+%% rule dated at or before their date (spec §8.10).
+pater	father	!N
+bʰrater	brother	!N
+dekan	ten
+gʰostis	guest	!N
+genu	knee	!N
+tris	three
+dʰugater	daughter	!N
+porta	gate	!N	-50
+telefon	telephone	!N	1950

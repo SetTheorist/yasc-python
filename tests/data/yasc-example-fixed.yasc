@@ -1,0 +1,142 @@
+%% Fixed-up copy of orig-notes/Yasc-Example.yasc (plan P4 acceptance file).
+%% The original is kept line for line where possible. Fixes applied (spec Appendix A):
+%%  A1  mid-line '#' comments are rewritten as '%%' comments (the Tone line and the
+%%      '&&[[' line). Lines whose first non-blank character is '#' followed by a space stay
+%%      as they are: they are still comment lines (spec §3.2).
+%%  A8  no escapes inside [...]: [#\'] [#\`] [#\^] [#\v] become [#'] [#`] [#^] [#v].
+%%  A9  elided '...' lists are written out: the Tone values and its (+), (<M->), (<-M>)
+%%      results, the Node daughter list, and the '...' body of the &&[[ ]] group
+%%      (two example rules).
+%%  Other fixes that are strictly necessary for the file to load:
+%%   - Node{...} becomes Node(...) (spec §4.3 syntax); its daughters Coronal and Dorsal are
+%%     declared;
+%%   - the features used by the orthography and the rules are declared at the end of the
+%%     Phonology (Syll Voice Nasal Low Front Round ATR Asp);
+%%   - the graphemes used by the rules (a e d o) are declared, and the placeholder rule
+%%     macros A B D E K are defined inside Rules;
+%%   - '/*/>' (not a modifier) becomes '/*/:>' (spec §8.3).
+%%  Orthography lines ending in '...' inside {} are allowed by spec §5.6 and are kept.
+
+$Phonetics := Phonology [[
+  # note that this Place declaration will automatically create constraints such as
+  #    {(a)Labial} --> {!Place}
+  Place Node(Labial Coronal Dorsal)
+  # Labial Unary == labial lab Lab    %%% Unary feature
+  Labial !
+  # High Binary == Hi hi high         %%% Binary feature
+  High   + -
+    (-)  - +
+  # Stress Scalar(1,3) == stress      %%% Scalar op
+  Stress 1 2 3
+    (++) 2 3 3
+    (--) 1 1 2
+    (-!) _ 1 2
+    (<Max>) 3 3 3
+    (<Min>) 1 1 1
+  Tone [H] [L] [M] [HL] [HM] [MH] [LH]   %% Many-valued feature
+    == To to tone
+    (+) [H] [M] [H] [HL] [HM] [MH] [LH]
+    (<M->) [MH] [M] [M] _ _ _ _
+    (<-M>) [HM] [M] [M] _ _ _ _
+  {(a)High} <--(-)--> {(a)Low}
+  {+Syll _Voice} --> {+Voice}   %% equivalent to {+Syll} ~~> {+Voice}
+  %% added declarations (see the header)
+  Coronal Unary
+  Dorsal Unary
+  Syll Binary
+  Voice Binary
+  Nasal Binary
+  Low Binary
+  Front Binary
+  Round Binary
+  ATR Binary
+  Asp Binary
+]]
+
+$Orthography := Orthography [[
+  *{ATR}
+  [p] {!Labial -Syll ...}
+  [m] {!Labial -Syll +Nasal ...}
+  [i] {+Syll +High +Front ...}
+  [y] {-Syll +High +Front ...}
+  [u"] {+Syll +High +Front +Round ...}
+  [p b v w] {!Labial}
+  [p t k f s] {-Voice}
+  %% added graphemes (see the header)
+  [t d] {-Syll !Coronal}
+  [d] {+Voice}
+  [k] {-Syll !Dorsal}
+  [a] {+Syll +Low -High}
+  [e] {+Syll -Low -High}
+  [o] {+Syll -Low -High +Round}
+  {+Voice} ==> [#_v]
+  {-Voice} ==> [#_o]
+  {!Labial} ==> [#_w]
+  {[H]Tone} ==> [#']
+  {[L]Tone} ==> [#`]
+  {[HL]Tone} ==> [#^]
+  {[LH]Tone} ==> [#v]
+  PhoneSeparator == [.]
+  MorphemeSeparator == [+]
+  CliticSeparator == [=]
+  WordSeparator == [#]
+  PhraseSeparator == [##]
+]]
+
+$Syllabification := Syllabification [[
+]]
+
+V === {+Syll}
+C === {-Syll}
+
+$Rules := Rules [[
+  X === << # | C >>
+  %% added placeholder macros (see the header)
+  A === [a]
+  B === [e]
+  D === [t]
+  E === [i]
+  K === [k]
+  $input := $_
+
+  [[
+     [[
+         A --> B / C __ D  /*/:>
+     ]] /:C+V
+     [[
+         A --> E / C __ D  /*/:>
+         D --> K / ___ C
+     ]] /:C+N
+  ]] /:C* /:C+(V N)
+
+  V --> 0 / ___# /! #(C)*___      %%% all equivalent
+# V --> 0 / ___#  /:i- #(C)*V#
+# V --> 0 / ___#  /:i+ V...V
+# V --> 0 / ___#  /:o- #(C)*#
+# V --> 0 / ___#  /:o+ V
+
+  V --> $1 $1 /! ___#  /*/:> %%% stupid rule: duplicate all non-final vowels
+  {}'$1 --> $1 /*/:>         %%% stupid rule: degeminate all (exactly) duplicate segments
+  {} --> 0 / ___$1 /*/:>     %%% stupid rule: degeminate all duplicate segments  (??)
+  V --> 0 / ___-V            %%% delete morpheme-final vowels before another vowel
+
+  $mid := $_
+
+  V --> {+Nasal} / {+Nasal}...___ /*/:>               %%% spread nasalisation rightward through all vowels in word
+  V:{_Tone} --> {[H]Tone} / ___...{[H]Tone} /*/:<     %%% spread high-tones leftward through all (non-toned) vowels in word
+  {(a)Tone} --> {<-M>(a)Tone} / ___{[M]Tone} /:F+V    %%% Adjoin M tone from left... only looking at vowels
+
+  ||[[ %%% exclusive disjunction exactly one of these will apply - gives a cyclic chain-shift
+    '[t] --> '[d] / #_   %%% note [] for bracketing orthographic forms
+    '[d] --> '[y] / #_   %%% and note ' for indicating _exact_ match only
+    '[y] --> '[t] / #_
+  ]]
+  &&[[ %% conjunction all must apply or none
+    [p] --> [b] / V ___ V
+    [b] --> [v] / V ___ V
+  ]]
+  [yi] --> [i] /:L+ {+N}
+  C:{-Voice} --> {+Asp} / . ___  /:$
+
+  !print "In=%O{0} Out=%O{2} Mid=\"%O{1}\"\n" $input $mid $_
+]]
