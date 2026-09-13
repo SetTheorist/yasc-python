@@ -70,7 +70,8 @@ print([str(v) for v in res.outputs], res.trace[0])
 - [docs/design.md](docs/design.md): the implementation design, package layout and decisions
   log.
 - [examples/README.md](examples/README.md): the examples (Grimm's law, Latin → Spanish, Bantu
-  tone, dialects, a paradigm, an SCA-style conlang) and how to run them.
+  tone, dialects, a paradigm, an SCA-style conlang, a proto-language with two daughters) and
+  how to run them.
 - `yasc/lib/ipa.yasc`: the standard library; `plan.md`: the implementation phases.
 - `orig-notes/`: the original design notes and the prototype `ret.py`, kept read-only.
 

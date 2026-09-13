@@ -1,0 +1,226 @@
+%% ==========================================================================
+%% ashkari.yasc -- Proto-Ashkari and its two daughters, Tolmen and Sirevi
+%% ==========================================================================
+%% An invented language family, as a conlanging sample.  Proto-Ashkari is
+%% typed in X-SAMPA; the common changes run first, then "!dialects" splits
+%% every word into a northern and a southern daughter, each with its own
+%% block of rules (about forty apiece, a hundred in all).
+%%
+%% PROTO-ASHKARI
+%%   consonants  p t k k_w   b d g g_w   s h   m n   l r   j w
+%%   vowels      a e i o u   a: e: i: o: u:        (X-SAMPA a is front)
+%%   syllables   (C)V(C), medial clusters; a few initial clusters (sr, tl, sn)
+%%   stress      the first long vowel of the word, otherwise the first
+%%               syllable (assigned by rule below; the syllable tier carries it)
+%%
+%% TOLMEN (north): a consonant-heavy language of closed syllables.
+%%   i-umlaut and a-umlaut, then apocope, syncope and reduction of unstressed
+%%   vowels to schwa; Verner-style voicing and rhotacism of s; nasal loss
+%%   before s with compensatory lengthening; final devoicing (persistent);
+%%   k > tS and g > j before front vowels; spirantization of stops before
+%%   stops; long high vowels break (i: y: u: > ej 2j ow), long mids rise,
+%%   long a: rounds to o:.  Labiovelars become kv gv.
+%%
+%% SIREVI (south): a vowel-heavy language of open syllables.
+%%   Labiovelars become p b; yod and front vowels palatalize; lenition
+%%   between vowels (p t k > b d g, b d g > v D G, s > z); stop + stop
+%%   assimilates to a geminate; nasals before obstruents and word-finally
+%%   nasalize the vowel and vanish (after lenition, so the stop that follows
+%%   stays voiceless); l vocalizes before consonants (al > aw > O:); h is
+%%   lost; a seven-vowel system (i e E a O o u) with metaphony, and stressed
+%%   E O break to jE wO in open syllables; final obstruents are lost and
+%%   final sonorants take a paragogic -e.
+%%
+%% Run it with one column per daughter:
+%%   python3 -m yasc examples/ashkari/ashkari.yasc examples/ashkari/lexicon.tsv --wide
+%% or trace one word:
+%%   python3 -m yasc examples/ashkari/ashkari.yasc --word k_watu --trace
+%% ==========================================================================
+
+!include "lib:ipa.yasc"
+!orthography input $XSAMPA output $IPA
+
+V === {+Syll}
+C === {-Syll}
+Stop === {-Son -Cont}
+Obst === {-Son}
+Liquid === {+Cons +Son -Nasal}
+Nasal === {+Nasal +Cons}
+Front === {-Cons +Front -Low}            %% non-low front vowels and j (X-SAMPA a is front)
+Yod === {-Cons +High +Front}              %% i i: j: the umlaut triggers
+Labiovelar === {+Cons +Round !Dorsal}    %% k_w g_w
+
+%% Proto-Ashkari syllables: (C)V(C); the tier only carries stress.
+$Syl := Syllabification [[
+  Onset    << Obst Liquid | [s] Stop | [s] Nasal | C >>
+  Nucleus  V
+  Coda     (C)
+  Algorithm MaxOnset
+]]
+
+$R := Rules [[
+  %% ======================================================================
+  %% Common Ashkari: changes shared by both daughters
+  %% ======================================================================
+  !syllabify $Syl
+  V --> {0Stress}                                           /" Unstressed
+  ||[[
+    V:{+Long} --> {2Stress}  /:1                            /" StressLong
+    V --> {2Stress} / # C* ___                              /" StressInitial
+  ]] /" Stress
+
+  %% h is lost between vowels; the hiatus contracts or glides
+  [h] --> 0 / V ___ V                                       /" MedialHLoss
+  V $1 --> {+Long}                                          /" Contraction
+  V:{+High -Round 0Stress -Long} --> [j] / ___ V           /" PrevocalicI
+  V:{+High +Round 0Stress -Long} --> [w] / ___ V           /" PrevocalicU
+  V:{+High -Round 0Stress -Long} --> [j] / V ___           /" PostvocalicI
+  V:{+High +Round 0Stress -Long} --> [w] / V ___           /" PostvocalicU
+  [j] --> 0 / ___ [i]                                       /" JAbsorption
+  [w] --> 0 / ___ [u]                                       /" WAbsorption
+
+  %% a nasal takes the place of a following obstruent (nk > Nk)
+  Nasal --> {(p)Place} / ___ {+Cons -Son (p)Place}          /" NasalPlace
+  %% labiovelars lose their rounding before a rounded vowel (k_wu > ku)
+  Labiovelar --> {_Labial} / ___ {+Syll +Round}             /" Delabialization
+
+  %% cluster repairs: mr > mbr, nr > ndr, sr > str, tl dl > kl gl
+  0 --> [b] / V [m] ___ Liquid                              /" MrEpenthesis
+  0 --> [d] / V [n] ___ Liquid                              /" NrEpenthesis
+  0 --> [t] / [s] ___ [r]                                   /" SrEpenthesis
+  <<[t]|[d]>> --> <<[k]|[g]>> / ___ [l]                     /" TlToKl
+
+  %% word-final obstruents devoice and final m becomes n
+  Obst --> {-Voice} / ___ #                                 /" FinalDevoicing
+  [m] --> [n] / ___ #                                       /" FinalM
+
+  !dialects (Tolmen Sirevi)
+
+  %% ======================================================================
+  %% Tolmen (north)
+  %% ======================================================================
+  [[
+    %% --- umlaut: a vowel takes colour from the next syllable ---
+    V:{+Back} --> {+Front -Back} / ___ {-Syll}* Yod         /" IUmlautRound
+    V:{+Low} --> {-Low +ATR} / ___ {-Syll}* Yod             /" IUmlautLow
+    V:{+High -Long +Back} --> {-High} / ___ {+Cons}+ V:{+Low}     /" AUmlautU
+    V:{+High -Long -Round} --> {-High} / ___ {+Cons}+ V:{+Low}    /" AUmlautI
+
+    %% --- s: nasal loss with lengthening, Verner voicing, rhotacism ---
+    V Nasal --> {+Long} / ___ [s]                           /" NasalLossBeforeS
+    [s] --> [z] / V:{0Stress} ___ V                         /" VernerVoicing
+    [z] --> [r]                                             /" Rhotacism
+
+    %% --- unstressed vowels: apocope, syncope, shortening, reduction ---
+    V:{0Stress -Long} --> 0 / C ___ #                       /" Apocope
+    Obst --> {-Voice} / ___ #   /::                         /" FinalDevoicing2
+    V:{0Stress -Long} --> 0 / V C ___ C V   /* /:<          /" Syncope
+    V:{0Stress +Long} --> {-Long} / ___ #                   /" FinalShortening
+    V:{0Stress -Long} --> [@] /! # C* ___                   /" Reduction
+
+    %% --- labiovelars: kv gv before a vowel, otherwise plain velars ---
+    Labiovelar --> {_Labial} [w] / ___ V                    /" LabiovelarSplit
+    Labiovelar --> {_Labial}                                /" LabiovelarSimplification
+
+    %% --- clusters ---
+    Obst --> {(v)Voice} / ___ Obst:{(v)Voice}               /" VoicingAssimilation
+    0 --> [@] / << Obst | Nasal | {-Cons -Syll} >> ___ {+Cons +Son} #   /" Epenthesis
+    [h] --> 0 / # ___ {+Cons}                               /" InitialH
+    {!Dorsal -Son} --> 0 / # ___ Nasal                      /" InitialKn
+    [w] --> [v] / ___ V                                     /" WToV
+    [v] --> 0 / # ___ [r]                                   /" InitialVr
+
+    %% --- palatals ---
+    [k] --> [t_S] / ___ Front                               /" KPalatalization
+    [g] --> [j] / ___ Front                                 /" GPalatalization
+    [s] [j] --> [S]                                         /" SJ
+    [t] [j] --> [t_S]                                       /" TJ
+    [d] [j] --> [d_Z]                                       /" DJ
+    [j] --> 0 / {-Syll -Anterior +Distributed} ___          /" JAfterPalatal
+    [s] --> [S] / # ___ {+Cons}                             /" InitialSCluster
+    [r] [s] --> [S]                                         /" RS
+
+    %% --- sonorant clusters and geminates ---
+    [l] [n] --> $1 $1                                       /" LN
+    Nasal Stop:{+Voice} --> $1 $1                           /" NasalAssimilation
+    {+Cons +Son} $1 --> $1 / ___ #                          /" FinalDegemination
+
+    %% --- stops before stops spirantize: pt kt > ft xt ---
+    Stop:{-Voice _Coronal} --> {+Cont +DelRel} / ___ Stop   /" StopSpirantization
+    {-Son +Cont !Labial} --> {+Labiodental}                 /" PhiToF
+
+    %% --- short mid vowels rise before a nasal cluster (hent > hint) ---
+    V:{-High -Low +ATR -Long} --> {+High} / ___ Nasal {-Syll}   /" PreNasalRaising
+
+    %% --- long vowels: breaking, raising, rounding (counter-feeding order) ---
+    [i:] --> [e] [j]                                        /" BreakingI
+    [y:] --> [2] [j]                                        /" BreakingY
+    [u:] --> [o] [w]                                        /" BreakingU
+    V:{-High -Low +Long +ATR} --> {+High}                   /" MidRaising
+    V:{+Low +Long} --> {-Low -Front +Back +Round +ATR}      /" LongARounding
+  ]] /:D+ Tolmen
+
+  %% ======================================================================
+  %% Sirevi (south)
+  %% ======================================================================
+  [[
+    %% --- labiovelars and glides ---
+    Labiovelar --> {_Dorsal -Round -Labiodental}            /" LabiovelarToLabial
+    [w] --> [b] / # ___                                     /" InitialW
+    [w] --> [v] / V ___ V                                   /" MedialW
+    [j] --> [d_Z] / # ___                                   /" InitialJ
+
+    %% --- yod and front vowels ---
+    <<[t]|[k]|[d]|[g]>> [j] --> <<[t_s]|[t_S]|[d_Z]|[d_Z]>>  /" YodAffrication
+    <<[l]|[n]>> [j] --> <<[L]|[J]>>                         /" YodPalatalization
+    [k] --> [t_S] / ___ {+Syll +Front -Low}                 /" KPalatalization2
+    [g] --> [d_Z] / ___ {+Syll +Front -Low}                 /" GPalatalization2
+
+    %% --- s and h ---
+    0 --> [i] / # ___ [s] {+Cons}                           /" Prothesis
+    [r] --> [s] / ___ [s]                                   /" RsToSs
+    V [s] --> {+Long} / ___ Stop                            /" SLossBeforeStop
+    [s] --> [z] / V ___ V                                   /" SVoicing
+    [t_s] --> [s]                                           /" TsToS
+    [h] --> 0                                               /" HLoss
+    V $1 --> {+Long}                                        /" Contraction2
+    V:{-Low -Round 0Stress} --> [j] / ___ V                 /" PrevocalicJ
+    V:{-Low +Round 0Stress} --> [w] / ___ V                 /" PrevocalicW
+
+    %% --- clusters: geminates from stop + stop and stop + nasal ---
+    Stop Stop --> $2 $2                                     /" StopAssimilation
+    Stop Nasal --> $2 $2                                    /" StopNasalAssimilation
+    [l] --> [j] / Stop ___                                  /" ClusterL
+
+    %% --- lenition between vowels (or before a liquid); geminates immune ---
+    Stop:{+Voice} --> {+Cont +DelRel} / V ___ << V | Liquid >>     /" Spirantization
+    Stop:{-Voice -DelRel} --> {+Voice} / V ___ << V | Liquid >>    /" Lenition
+    {-Son +Cont !Labial} --> {+Labiodental}                 /" BetaToV
+
+    %% --- nasal vowels: after lenition, so kanta > ka~ta keeps its t ---
+    V Nasal --> {+Nasal} / ___ Obst                         /" Nasalization
+    V Nasal --> {+Nasal} / ___ #                            /" FinalNasalization
+
+    %% --- l before a consonant vocalizes, and the diphthong rounds ---
+    [l] --> [w] / V ___ {+Cons}                             /" LVocalization
+    V:{-High} [w] --> {+Long +Round +Back -Low +ATR} / ___ {+Cons}   /" WMonophthongMid
+    V:{+High} [w] --> {+Long +Round +Back} / ___ {+Cons}    /" WMonophthongHigh
+
+    %% --- vowels: seven qualities, metaphony, breaking ---
+    V:{-High -Low -Long} --> {-ATR}                         /" MidLaxing
+    V:{-High -Low +ATR 2Stress} --> {+High} / ___ {+Cons}+ V:{+High} #   /" MetaphonyHigh
+    V:{-High -Low -ATR 2Stress} --> {+ATR} / ___ {+Cons}+ V:{+High} #    /" MetaphonyMid
+    V --> {-Long}                                           /" LengthLoss
+    V:{-High -Low -ATR -Round -Nasal 2Stress} --> [j] $1 / ___ {+Cons} V   /" BreakingE
+    V:{-High -Low -ATR +Round -Nasal 2Stress} --> [w] $1 / ___ {+Cons} V   /" BreakingO
+
+    %% --- word ends and odds ---
+    {+Cons -Son} --> 0 / ___ #                              /" FinalObstruentLoss
+    0 --> [e] / {+Cons +Son} ___ #                          /" Paragoge
+    [r] --> [l] / ___ ... [r]                               /" Dissimilation
+    [L] --> [j]                                             /" Yeismo
+  ]] /:D+ Sirevi
+
+  %% Stress is not written in the daughters' output (--trace shows it).
+  V --> {0Stress}                                           /" Destress
+]]

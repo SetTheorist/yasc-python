@@ -27,6 +27,7 @@ EXAMPLES = {
     "dialects": ("proto.yasc", "lexicon.tsv", ["--wide"], "expected-wide.out"),
     "paradigm": ("declension.yasc", "lexicon.tsv", [], "expected.out"),
     "conlang": ("conlang.yasc", "lexicon.tsv", [], "expected.out"),
+    "ashkari": ("ashkari.yasc", "lexicon.tsv", ["--wide"], "expected-wide.out"),
 }
 
 
